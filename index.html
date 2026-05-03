@@ -1,0 +1,30 @@
+---
+layout: default
+---
+
+<section class="home-intro">
+  <h1>Hi, I'm Mohinee.</h1>
+  <p>
+    I'm a senior software engineer with 14 years of experience, currently architecting
+    enterprise-scale AI agents at Microsoft Teams. Most of my career has been spent
+    in the browser — React, TypeScript, building things people actually use — and
+    these days a lot of it sits at the intersection of frontend craft and LLM systems.
+  </p>
+  <p>
+    This is where I write about what I'm learning. Mostly notes-to-self that turned
+    into something worth sharing.
+  </p>
+</section>
+
+<section>
+  <h2 class="section-label">Writing</h2>
+  <ul class="post-list">
+    {% for post in site.posts %}
+      <li>
+        <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+        <p class="post-meta">{{ post.date | date: "%B %-d, %Y" }}</p>
+        <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 200 }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+</section>

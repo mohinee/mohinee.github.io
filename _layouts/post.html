@@ -1,0 +1,34 @@
+---
+layout: default
+---
+<article class="post">
+  <header class="post-header">
+    {% if page.image or page.featured_image %}
+      <div class="post-cover">
+        <img src="{{ page.image | default: page.featured_image | relative_url }}" alt="{{ page.title }}">
+      </div>
+    {% endif %}
+    <h1 class="post-title">{{ page.title }}</h1>
+    <p class="post-meta">
+      <span>{{ page.date | date: "%B %-d, %Y" }}</span>
+      {% if page.reading_time %}
+        <span class="meta-pill">{{ page.reading_time }} min read</span>
+      {% endif %}
+      {% if page.categories %}
+        <span class="meta-pill">{{ page.categories | join: ", " }}</span>
+      {% endif %}
+    </p>
+  </header>
+
+  <div class="post-content">
+    {{ content }}
+  </div>
+
+  <footer class="post-footer">
+    <p>
+      Thanks for reading. If something here struck a chord, I'd love to hear from you —
+      <a href="mailto:{{ site.email }}">email</a> or
+      <a href="https://linkedin.com/in/{{ site.linkedin_username }}">LinkedIn</a>.
+    </p>
+  </footer>
+</article>
