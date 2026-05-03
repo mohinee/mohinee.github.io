@@ -59,8 +59,7 @@ technically beautiful agents that nobody used, because the answer to "where
 does this fit in my day" was "nowhere obvious." The model quality wasn't the
 problem. The integration site was.
 
-## Trust is built in two stages, and the second one is where it actually
-matters
+## Trust is built in two stages, and the second one is where it actually matters
 
 The first stage is initial trust — does the user try it once. This is mostly
 about discoverability, the on-ramp UX, and the demo-quality of the first
