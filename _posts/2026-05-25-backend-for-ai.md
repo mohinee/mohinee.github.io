@@ -155,5 +155,3 @@ The p95 blew our budget. The fix wasn't faster components — it was architectur
 Building backend systems for AI agents is closer to distributed systems engineering than it is to "AI engineering." The LLM is one component in a pipeline that includes state management, access control, caching, observability, and all the infrastructure patterns we've been refining for decades. The teams that treat it as a fundamentally new discipline tend to reinvent (worse versions of) existing solutions.
 
 The unsexy backend work — the event sourcing, the access control filtering, the latency budgeting — is what separates a demo from a product that millions of people depend on daily.
-
-*If you're building something similar and want to compare notes, find me on [LinkedIn](https://in.linkedin.com/in/mohinee).*
