@@ -7,16 +7,20 @@ permalink: /about/
 <h1>About</h1>
 
 <p>
-  I'm Mohinee Indurkar, a senior software engineer based in Bengaluru. I've spent
-  14 years building software across full-stack web and mobile, with deep specialization
-  in frontend — React, React Native, TypeScript, and the design and architecture work
-  that goes into making interfaces hold up at scale.
+ 
+I'm Mohinee — a fullstack engineer with 14 years of experience building production systems across the stack, from React and TypeScript on the frontend to C#/.NET, Java, and cloud infrastructure on the backend.
 </p>
-
 <p>
-  I currently work at Microsoft, where I architect enterprise-scale AI agents on
-  Microsoft Teams — taking generative AI and LLM systems from prototype to production
-  for millions of users. Before Microsoft, I was a senior engineer at Udaan and Intuit.
+I currently work at Microsoft in Bengaluru, where I build AI agents and search infrastructure for Microsoft Teams. My work sits at the intersection of LLM orchestration, multi-agent pipelines, and large-scale distributed systems serving millions of enterprise users.
+</p>
+<p>
+Before Microsoft: at Udaan I worked on React Native performance at scale; at Intuit I re-architected a CMS backend that cut SLA from 48 hours to 20 minutes; earlier roles took me through Java SpringBoot services, PHP Laravel backends, and mobile engineering.
+</p>
+<p>
+Outside work I build things to understand them. Genesis is my current project — a five-agent AI app builder where a pipeline of specialized agents (planner, architect, developer, tester, reviewer) collaborates to generate, test, and review working applications from a plain-language description. I write about what I learn building it.
+</p>
+<p>
+This blog covers fullstack architecture, AI systems in production, backend design patterns, and the decisions that don't fit in a PR description.
 </p>
 
 <h2>What I write about</h2>
