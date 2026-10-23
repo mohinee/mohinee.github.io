@@ -1,7 +1,7 @@
 ---
-layout: post
-title: "Shadow Mode: Earning a Skeptical Team's Trust Before a Model Makes a Single Decision"
+title: "Shadow mode: earning a skeptical team's trust before a model makes a single decision"
 date: 2026-09-17
+reading_time: 7
 tags: [ai, deployment, evaluation, reliability, python]
 description: "Nobody should be asked to trust a model on day one. Run it silently beside the process it will replace, show the diff, and let the data pick the confidence threshold. With code that picks the threshold for you."
 ---
@@ -11,8 +11,7 @@ trust a model on day one. They know their process. They know the edge cases that
 never made it into a spec. And they have usually seen at least one confident,
 wrong demo.
 
-The approach I keep coming back to is boring and effective: **run the model in
-shadow mode first**. It sees every real input, makes every decision it would
+What I do instead is **run the model in shadow mode first**. It sees every real input, makes every decision it would
 make in production, and none of those decisions touch anything. A human keeps
 doing the work exactly as before. You log both answers and compare.
 

@@ -1,16 +1,16 @@
 ---
-layout: post
-title: "Using AI to Learn a New Codebase Fast (Without Trusting It Blindly)"
+title: "Using AI to learn a new codebase fast, without trusting it blindly"
 date: 2026-09-11
+reading_time: 7
 tags: [ai, developer-productivity, engineering, onboarding, code-review]
 description: "AI coding tools can compress the first weeks in an unfamiliar repository into days, if you use them as hypothesis generators rather than oracles. A five-phase workflow."
 ---
 
-Every experienced engineer knows the feeling of opening a large, unfamiliar repository. You don't know what matters, what is load-bearing, and what is legacy nobody dares touch. Reading top to bottom doesn't work, because the thing you need to understand is rarely in one place.
+Opening a large, unfamiliar repository is disorienting no matter how long you've been doing this. You don't know what matters, what everything else depends on, or what is legacy nobody dares touch. Reading top to bottom doesn't work, because the thing you need to understand is rarely in one place.
 
-AI coding agents change the economics of this a lot. They can read a hundred files while you read three. But they also produce confident, fluent, plausible-sounding descriptions of code that are sometimes wrong, and in a codebase you don't know yet, you are the worst-placed person to notice.
+AI coding agents help a lot here. They can read a hundred files while you read three. But they also produce confident, fluent, plausible-sounding descriptions of code that are sometimes wrong, and in a codebase you don't know yet, you are the worst-placed person to notice.
 
-The workflow below tries to get the speed without the risk. The recurring rule is simple: **the model proposes, the repository and its history decide.**
+The workflow below aims for the speed without the risk. One rule runs through all of it: **the model proposes, the repository and its history decide.**
 
 ## Phase 1: A metadata pass
 
@@ -104,7 +104,7 @@ Nothing damages a newcomer's credibility faster than confidently calling somethi
 ## Two practical cautions
 
 - **Check your organization's policy on AI tools first.** Pointing an external service at a private repository may be restricted, or allowed only for approved tools. This is a two-minute question that avoids a serious problem.
-- **Don't let the tool's summary replace reading.** For the small number of files that are truly central, read them yourself. The summary is a map, not the territory. You still need to walk the ground where it matters.
+- **Don't let the tool's summary replace reading.** For the handful of files that are truly central, read them yourself, line by line. A summary tells you where to look. It doesn't replace looking.
 
 ## The workflow in one glance
 

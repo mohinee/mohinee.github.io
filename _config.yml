@@ -1,13 +1,12 @@
 title: Mohinee Indurkar
 tagline: Senior software engineer · AI agents, full-stack, React
 description: >-
-    Fullstack engineer with 14 years of experience across React, C#/.NET, Java, and cloud infrastructure.
-    Currently building AI agents and search infrastructure at Microsoft.
-    Writing about distributed systems, multi-agent architectures, and fullstack engineering in production.
+    Senior software engineer with 14 years across React, C#/.NET, Java, and cloud infrastructure,
+    currently building AI agents for Microsoft Teams. Notes on AI agents in production,
+    multi-agent systems, and full-stack engineering.
 author: Mohinee Indurkar
 email: mohineet@gmail.com
 
-# Update these once you create the GitHub repo
 url: "https://mohinee.github.io"
 baseurl: ""
 
@@ -19,8 +18,6 @@ markdown: kramdown
 highlighter: rouge
 permalink: /:year/:title/
 
-# Posts shown on home page
-paginate: 10
 
 plugins:
   - jekyll-feed

@@ -1,201 +1,181 @@
 ---
 title: "What shipping AI agents into a large enterprise platform taught me"
 date: 2026-04-22
-excerpt: "Most writing about AI agents is from the perspective of building one. Less of it is about what happens when you put one in front of millions of users inside a platform they already depend on. The lessons are different."
-reading_time: 9
+reading_time: 8
+description: "Most writing about AI agents comes from people building standalone ones. Putting an agent in front of millions of users inside a product they already depend on teaches different lessons."
+tags: [ai, agents, product, enterprise]
 ---
 
-I've spent the last couple of years architecting AI agents that ship inside a
-large enterprise productivity platform. The specifics aren't the point of this
-post — and aren't mine to share publicly — but the *shape* of the work is
-something I think more people building agents would benefit from hearing about.
+For the last three years I've been designing AI agents that ship inside
+Microsoft Teams. This post is about the product side of that work: where an
+agent should live, how users come to trust it, and how to design its tools. (I
+wrote about the backend side [separately]({% post_url 2026-05-25-backend-for-ai %}).)
+Most of what I read about agents assumes a different situation.
 
-Most of the agent content I read is written from the perspective of someone
-building a standalone agent. The user opens a new app, has a conversation,
-gets a result. That's a real category of work, but it's the easier one. The
-harder problem — and the one I keep coming back to — is integrating an agent
-into a platform people already use, where the bar isn't "is this impressive"
-but "does this make my workday better, every day, without surprising me."
+That writing usually describes a standalone agent: the user opens a new app,
+has a conversation, gets a result. Building an agent into a product people
+already use every day is a different problem. Nobody is asking whether it's
+impressive. They're asking whether it makes their workday better without
+surprising them.
 
-These are notes from that work, generalized.
+These are my notes from that work.
 
-## The novelty budget is much smaller than you think
+## Users won't forgive much
 
-When you build a standalone AI app, users come to it with their expectations
-calibrated to "this is an AI thing." They tolerate delays, hallucinations, and
-strange behavior because they came for the magic.
+People who open a standalone AI app expect an AI app. They put up with delays,
+wrong answers, and odd behavior because they came to try the new thing.
 
-When you embed an agent inside a tool people use for their actual jobs, none
-of that tolerance carries over. Users come with expectations calibrated to
-the *host platform*. If the host responds to clicks in 100ms, your agent's
-800ms first-token latency reads as "this thing is broken." If the host has
-a polished UI, your streaming-text-into-a-bubble interface looks like a
-prototype someone forgot to finish.
+Put an agent inside a tool people use for their jobs and that patience
+disappears. Their expectations come from the *host product*. If the host
+responds to a click in 100ms, an agent that takes 800ms to show its first
+token feels broken. If the host is polished, a box of streaming text looks
+like a prototype someone forgot to finish.
 
-The implication: the more established the platform you're embedding in, the
-more your agent has to feel like it belongs there. Reuse the host's design
-system religiously. Match its latency profile, even if that means simpler
-features. Inherit its error states. Boring is a feature.
+So the more established the host, the more the agent has to look and behave
+like part of it. Use the host's design system, with no exceptions. Match its
+latency, even if that means cutting features. Use its error states rather than
+inventing your own. Users shouldn't be able to tell where the host ends and the
+agent begins.
 
-## "Where does the agent live in the workflow" is the actual hard question
+## The hard question is where the agent lives
 
-Building the agent's capabilities is, surprisingly, not the hard part anymore.
-The model has gotten good. Tool-calling is well-supported. RAG patterns are
-documented. You can stand up a competent agent in a week.
+Getting an agent to *do* things is no longer the hard part. The models are
+good, tool calling is well supported, and retrieval patterns are well
+documented. A competent team can have a working agent in a week.
 
-The hard part is figuring out where in the user's existing workflow the agent
-should *show up*. This is the question that took me the longest to learn to
-ask early enough:
+What's hard is deciding where in the user's existing workflow the agent shows
+up. It took me a long time to start asking this early enough:
 
-- Is the agent a button users press when they want help?
-- Is it a passive presence that watches and offers suggestions?
-- Is it a separate surface they navigate to?
-- Does it interrupt? Does it wait to be summoned?
-- What's its relationship to the things the user was already doing?
+- Is it a button people press when they want help?
+- Does it sit in the background and offer suggestions?
+- Is it a separate place they navigate to?
+- Does it interrupt, or wait to be asked?
+- How does it relate to what the user was already doing on that screen?
 
-Each of these is a different product. Each is a different engineering
-investment. And each fails in different ways. I've watched smart teams build
-technically beautiful agents that nobody used, because the answer to "where
-does this fit in my day" was "nowhere obvious." The model quality wasn't the
-problem. The integration site was.
+Each answer is a different product, needs different engineering work, and
+fails in different ways. I've seen strong teams build technically excellent
+agents that nobody used, because the honest answer to "where does this fit in
+my day?" was "nowhere obvious." The model wasn't the problem. Where it was
+placed was.
 
-## Trust is built in two stages, and the second one is where it actually matters
+## Trust comes in two stages
 
-The first stage is initial trust — does the user try it once. This is mostly
-about discoverability, the on-ramp UX, and the demo-quality of the first
-interaction. It's important and it gets a lot of attention.
+The first stage is getting someone to try it once. That depends on
+discoverability, onboarding, and how good the first interaction feels. It gets
+most of the attention.
 
-The second stage is *sustained* trust — does the user reach for it again next
-week, next month. This is where most of the actual product work lives, and
-it's bottlenecked on something boring: predictability.
+The second stage is getting them to come back next week and next month. That's
+where most of the product work is, and it depends mostly on predictability.
 
-A user can tolerate an agent that's right 70% of the time *if they can predict
-which 70%*. They can't tolerate an agent that's right 90% of the time but the
-failures are random. The first is a tool with known limits. The second is a
+People can work with an agent that's right 70% of the time *if they can tell
+which 70%*. They won't keep using one that's right 90% of the time when the
+failures look random. The first is a tool with known limits. The second is a
 slot machine.
 
-The implication for design is uncomfortable: it's often better to make your
-agent *less ambitious in scope* and more reliable within that scope, than to
-push for capability and hope users learn the failure modes. The version that
-says "I can do A, B, C, and I'll tell you when something's outside that" beats
-the version that tries everything and is often, mysteriously, wrong.
+That leads to an uncomfortable design choice: it's often better to narrow what
+the agent attempts and be reliable within that scope than to push capability
+and hope users learn where it fails. An agent that says "I can do A, B, and C,
+and I'll tell you when something is outside that" beats one that tries
+everything and is sometimes wrong for no visible reason.
 
-## Tool surfaces get designed for the model, not the human
+## Design tools for the model, not for yourself
 
-When I started, I designed tools the way I'd design APIs for a developer to
-use: clear semantics, thorough parameters, sensible defaults. The model
-struggled with them.
-
-I'd designed them for *me*. The model needed something different.
+At first I designed tools the way I'd design an API for another developer:
+clear semantics, complete parameters, sensible defaults. The model handled
+them badly. I had designed them for me.
 
 What worked better, after a lot of iteration:
 
-- **Narrower tools, more of them.** A single "search" tool with twelve
-  parameters lost to three tools with two parameters each, even though the
-  combined surface was strictly smaller.
+- **More tools, each narrower.** One `search` tool with twelve parameters did
+  worse than three tools with two parameters each, even though the three
+  covered less ground.
 - **Names written for the model.** `find_documents_by_keyword` beats `search`.
-  The verbosity helps the model pick correctly. Cosmetic to a human reader,
-  load-bearing for the LLM.
-- **Examples in descriptions.** Tool descriptions that include concrete
-  examples of valid arguments dramatically reduced bad calls. The model
-  treats descriptions like documentation, and writing them like *good*
-  documentation pays off.
-- **Errors as feedback, not failures.** When the model called a tool wrong,
-  the question wasn't "how do I show the user a graceful error" — the user
-  shouldn't see the error at all. The question was "how do I return something
-  to the model that helps it self-correct on the next loop iteration."
+  The longer name looks redundant to a person but helps the model pick the
+  right tool.
+- **Examples in the descriptions.** Adding concrete examples of valid arguments
+  to tool descriptions cut bad calls noticeably. The model reads descriptions
+  as documentation, so it pays to write them like good documentation.
+- **Errors written for the model, not the user.** When the model called a tool
+  wrong, the user shouldn't see an error at all. The useful question was what
+  to send back so the model could correct itself on the next step: which
+  argument was invalid, what the valid values were, what to try instead.
 
-This last one was the biggest mental shift for me. Tools aren't called once
-and consumed. They're part of an inner loop where the model is constantly
-adjusting its plan. Treating tool errors as a structured signal back into
-that loop, rather than as exceptions to handle, made my agents materially
-more capable.
+That last point changed how I thought about tools. A tool isn't called once
+and finished. It's part of a loop in which the model keeps revising its plan.
+Returning tool errors as structured feedback into that loop, instead of
+treating them as exceptions to handle, made the agents noticeably more capable.
 
-## The expensive bug is the one nobody notices
+## The costly failures are the silent ones
 
-In a chat agent, when something goes wrong, the user sees it. They thumbs-down
-it. They retry. The signal is loud.
+In a chat product, a bad answer is visible. The user clicks thumbs-down or
+retries, and you get a clear signal.
 
-In an embedded enterprise agent, the failures that matter most are often
-*silent*. The agent looks like it succeeded. It returned a confident-sounding
-answer. The user accepted it. And it was wrong in a way that won't surface for
-a week, when whoever depends on the output discovers something doesn't add up.
+In an agent built into an enterprise product, the failures that matter most
+are often silent. The agent appears to succeed. It gives a confident answer,
+the user accepts it, and the mistake surfaces a week later when someone who
+relied on the output finds that something doesn't add up.
 
-The implication: evaluation has to look at outputs, not just at user
-feedback. Thumbs ratings are a useful signal but they're heavily biased
-toward the loud failures. The quiet ones — the confidently wrong ones — are
-the ones that erode trust hardest, and they're the ones you have to actively
-hunt for. We invested a lot more in offline evaluation, golden-set replay, and
-LLM-as-judge pipelines than I'd have predicted upfront. It paid off every
-time.
+So evaluation has to look at the outputs themselves, not only user feedback.
+Thumbs ratings are skewed toward obvious failures. The confidently wrong
+answers do the most damage to trust, and you have to go looking for them. We
+put far more into offline evaluation, replaying golden sets, and LLM-as-judge
+pipelines than I would have guessed at the start, and it paid off every time.
 
-## Latency is mostly perceived, but not entirely
+## Perceived latency only gets you so far
 
-There's a popular framing — true and useful — that perceived latency matters
-more than actual latency. Stream the response, show progress, give the user
-something to read while the rest arrives, and a 4-second total turnaround
-feels like 1.
+The usual advice is that perceived latency matters more than actual latency:
+stream the response, show progress, give the user something to read, and a
+4-second response can feel like 1.
 
-This is right, and it's the first lever to pull. But there's a floor it can't
-get you under. If your agent does a multi-step plan with three tool calls
-before the first user-visible output, *no amount of streaming polish* will
-cover the dead air. The user is staring at a thinking indicator with nothing
-to read.
+That's right, and it's the first thing to try. But it has a limit. If the agent
+runs three tool calls before producing any visible output, streaming can't
+cover the gap. The user just watches a spinner.
 
-The fix isn't streaming, it's architectural. Either:
+The fix is in the design, not the streaming:
 
-- The first model output is text, before any tool calls — even if it's just
-  acknowledging the request and stating the plan
-- The tool calls happen in parallel where possible, not sequentially
-- The agent is smaller-scoped so the multi-step plan isn't necessary in the
-  first place
+- Make the model's first output text, before any tool calls, even if it only
+  restates the request and the plan.
+- Run independent tool calls in parallel rather than one after another.
+- Narrow the agent's scope so it doesn't need a multi-step plan in the first place.
 
-I default to the third. A scope-tightened agent is almost always faster than a
-scope-broad one with clever orchestration.
+I usually choose the third. A narrowly scoped agent is almost always faster
+than a broad one with clever orchestration.
 
-## Mentorship and ramp-up: the hidden cost
+## Onboarding engineers costs more than you expect
 
-Something I didn't expect: bringing engineers up to speed on building AI
-features takes longer than bringing them up to speed on a normal codebase. The
-mental model is different. The debugging loop is different. The reasoning
-about "why did the model do that" requires a different muscle than "why did
-my function return that."
+I didn't expect getting engineers productive on AI features to take longer
+than getting them productive on an ordinary codebase. But the debugging loop is
+different. Working out why a model did something is a different skill from
+working out why a function returned a value.
 
-The teams that absorbed AI work fastest weren't the teams with the most ML
-background. They were the teams where someone had taken the time to write
-down the patterns, the gotchas, the eval workflow, the prompt-versioning
-conventions — all the unwritten knowledge that would otherwise have to be
-acquired by trial and error.
+The teams that picked up AI work fastest weren't the ones with the most ML
+background. They were the ones where someone had written down the patterns,
+the common mistakes, the evaluation workflow, and the prompt-versioning
+conventions: everything people would otherwise learn by trial and error.
 
-Mentorship, in this domain, is partly about codifying tacit knowledge that
-isn't in any tutorial yet. The investment is high. It pays back in team
-velocity within a quarter.
+In this area, a lot of mentoring is writing down knowledge that doesn't exist
+in any tutorial yet. It takes real time, and in my experience it paid back in
+team speed within a quarter.
 
-## The thing that kept surprising me
+## Agent work is mostly product work
 
-After all of this, the part that still catches me is how much agent work is
-actually *product work*, not ML work. The hard questions are about scope,
-trust, integration, latency, error handling, what the user sees when something
-goes wrong, what the user sees when something goes right. These are the
-questions every other product surface has to answer. Agents don't get to skip
-them just because there's a model under the hood.
+What still surprises me is how much of this is product work rather than ML
+work. The hard questions are about scope, trust, placement, latency, error
+handling, and what the user sees when things go wrong or right. Every other
+product feature has to answer the same questions. Agents don't get to skip
+them because there's a model involved.
 
-If anything, the model's flexibility makes them harder. With a deterministic
-feature, you know what it does and you design the UX to match. With an agent,
-the same UI surface might be doing very different things on different inputs.
-The user experience has to hold up across all of those.
+The model's flexibility makes them harder. With a deterministic feature, you
+know what it does and design the UI to match. With an agent, the same UI might
+be doing very different things depending on the input, and the experience has
+to hold up across all of them.
 
-The good news: the discipline that makes a good product engineer — caring
-about what the user feels, sweating the details, taking failure modes
-seriously — translates directly to making good agents. The mental model
-upgrade is real, but it's an upgrade, not a replacement.
+The good news is that the habits of a good product engineer carry over:
+caring how the user experiences the product, getting the details right, and
+taking failure modes seriously. You need a new mental model on top, but you
+don't have to throw out the old one.
 
 ---
 
-*Caveat to head off the obvious question: I work on AI agent systems
-professionally. Nothing in this post is specific to my employer's
-architecture, internal tooling, or unreleased work — these are patterns I'd
-recognize across enterprise agent projects in general, written at the level
-where they're useful to other engineers thinking about similar problems. If
-you've shipped agents in a different context and your lessons differ, I'd be
-genuinely curious to compare.*
+*If you've shipped agents somewhere different and learned different lessons,
+I'd like to compare notes.*

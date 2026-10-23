@@ -2,38 +2,42 @@
 layout: default
 title: About
 permalink: /about/
+description: "Mohinee Indurkar, senior software engineer at Microsoft in Bengaluru, building AI agents and search infrastructure for Microsoft Teams."
 ---
 
 <h1>About</h1>
 
 <p>
- 
-I'm Mohinee — a fullstack engineer with 14 years of experience building production systems across the stack, from React and TypeScript on the frontend to C#/.NET, Java, and cloud infrastructure on the backend.
+I'm Mohinee, a senior software engineer with 14 years of experience across the
+stack: React and TypeScript on the frontend, C#/.NET, Java and cloud
+infrastructure on the backend.
 </p>
 <p>
-I currently work at Microsoft in Bengaluru, where I build AI agents and search infrastructure for Microsoft Teams. My work sits at the intersection of LLM orchestration, multi-agent pipelines, and large-scale distributed systems serving millions of enterprise users.
+I work at Microsoft in Bengaluru, building AI agents and search infrastructure
+for Microsoft Teams. That means LLM orchestration, multi-agent pipelines, and
+the distributed systems underneath them, for an enterprise user base in the
+millions.
 </p>
 <p>
-Before Microsoft: at Udaan I worked on React Native performance at scale; at Intuit I re-architected a CMS backend that cut SLA from 48 hours to 20 minutes; earlier roles took me through Java SpringBoot services, PHP Laravel backends, and mobile engineering.
+Before Microsoft, I worked on React Native performance at Udaan, and at Intuit
+I re-architected a CMS backend, which brought its SLA down from 48 hours to 20
+minutes. Earlier roles covered Java Spring Boot services, PHP Laravel backends,
+and mobile engineering.
 </p>
 <p>
-Outside work I build things to understand them. Genesis is my current project — a five-agent AI app builder where a pipeline of specialized agents (planner, architect, developer, tester, reviewer) collaborates to generate, test, and review working applications from a plain-language description. I write about what I learn building it.
-</p>
-<p>
-This blog covers fullstack architecture, AI systems in production, backend design patterns, and the decisions that don't fit in a PR description.
+Outside work, I build things to understand them. My current project is Genesis,
+an AI app builder where five agents (planner, architect, developer, tester,
+reviewer) turn a plain-language description into a working, tested, reviewed
+application. I write about what I learn building it.
 </p>
 
 <h2>What I write about</h2>
 
-<p>
-  Mostly the things I'm thinking about while building. That includes:
-</p>
-
 <ul>
-  <li>Building with LLMs and AI agents — what works, what doesn't, what surprised me</li>
-  <li>Frontend craft — React, TypeScript, accessibility, the parts of UI engineering tutorials skip</li>
-  <li>Cross-stack thinking — how frontend decisions hit the backend, and vice versa</li>
-  <li>The occasional take on developer tooling and infrastructure I find interesting</li>
+  <li>Building with LLMs and AI agents: what worked, what didn't, and what surprised me</li>
+  <li>Frontend engineering: React, TypeScript, accessibility, and the parts tutorials skip</li>
+  <li>How frontend decisions affect the backend, and the reverse</li>
+  <li>Now and then, developer tooling and infrastructure I've found useful</li>
 </ul>
 
 <h2>Elsewhere</h2>

@@ -14,9 +14,9 @@ layout: default
       {% if page.reading_time %}
         <span class="meta-pill">{{ page.reading_time }} min read</span>
       {% endif %}
-      {% if page.categories %}
-        <span class="meta-pill">{{ page.categories | join: ", " }}</span>
-      {% endif %}
+      {% for tag in page.tags limit: 3 %}
+        <span class="meta-pill">{{ tag }}</span>
+      {% endfor %}
     </p>
   </header>
 
@@ -26,7 +26,7 @@ layout: default
 
   <footer class="post-footer">
     <p>
-      Thanks for reading. If something here struck a chord, I'd love to hear from you —
+      Questions or corrections:
       <a href="mailto:{{ site.email }}">email</a> or
       <a href="https://linkedin.com/in/{{ site.linkedin_username }}">LinkedIn</a>.
     </p>

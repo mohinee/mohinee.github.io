@@ -78,8 +78,9 @@ Front matter looks like:
 ---
 title: "Your post title"
 date: 2026-05-02
-excerpt: "A 1–2 sentence summary that shows on the home page."
-reading_time: 7
+reading_time: 6
+tags: [ai, frontend]
+description: "A 1–2 sentence summary. Shown on the home page and used as the meta description."
 ---
 ```
 

@@ -1,138 +1,184 @@
 ---
-layout: post
-title: "Why I Built a Five-Agent Pipeline Instead of One Big Prompt"
+title: "Why I built a five-agent pipeline instead of one big prompt"
 date: 2026-06-09
+reading_time: 7
 tags: [ai, agents, architecture, llm, multi-agent, backend]
-description: "The design thinking behind Genesis's five-agent pipeline — why task decomposition beats monolithic prompting, and why boring file-based handoffs beat clever orchestration frameworks."
+description: "The reasoning behind Genesis's five-agent pipeline: why splitting the work by kind of thinking beats one large prompt, and why plain JSON files beat an orchestration framework for handoffs."
 ---
 
-The obvious way to build an AI-powered app builder is to write one large, well-crafted prompt, pass in the user's request, and let the model produce code. It's fast to prototype. It works for simple cases. And it will eventually fail you in ways that are hard to debug and harder to fix.
+The obvious way to build an AI app builder is one long, carefully written
+prompt: pass in the user's request and let the model write the code. It's quick
+to prototype and it works for simple apps. As apps get bigger, it fails in ways
+that are hard to debug and harder to fix.
 
-Genesis takes a different approach: a pipeline of five specialized agents — Planner, Architect, Developer, Tester, Reviewer — each with a narrow job, explicit inputs, and a defined handoff. Here's why that decision was made, and what I'd do differently if I built it again.
+Genesis uses a pipeline of five agents instead: Planner, Architect, Developer,
+Tester, and Reviewer. Each has a narrow job, defined inputs, and a defined
+handoff. This post explains why, and what I'd change if I started again.
 
----
+## The problem with one prompt
 
-## The Core Problem with Monolithic Generation
+If one prompt has to plan, design, implement, test, and review an application,
+a single context window has to switch between five very different kinds of
+thinking:
 
-When you give a single LLM prompt the job of planning, designing, implementing, testing, and reviewing an application, you're asking one context window to hold expert-level knowledge across four fundamentally different modes of thinking.
+- **Planning is about scope:** what's in, what's out, what comes first, what
+  depends on what.
+- **Architecture is about contracts:** what each component exposes, what it
+  consumes, and what must stay true at the boundary.
+- **Development is about implementation:** how it works in code, the happy
+  path, the error path, and whether it matches the contract.
+- **Testing is about breaking things:** which inputs make it fail and which
+  edge cases the developer missed.
+- **Review is about consistency:** whether the code matches the spec, whether
+  there are security holes, and whether it can be maintained.
 
-A planner needs to reason about **scope** — what's in, what's out, what comes first, what's a dependency of what.
+On human teams these are often different people. Asking one model call to do
+all five gives you mediocre results on each, because the prompt can't go deep
+on any of them, and the goals pull against each other. The developer wants the
+code to work. The tester wants to show it doesn't.
 
-An architect needs to reason about **contracts** — what does this component expose, what does it consume, what invariants must hold at the boundary.
+## The five agents
 
-A developer needs to reason about **implementation** — how does this actually work in code, what's the error path, what's the happy path, does this match the contract.
+### Planner
 
-A tester needs to reason about **falsification** — where will this break, what input makes it fail, what edge cases did the developer not consider.
+The Planner takes a product description in plain language and produces:
 
-A reviewer needs to reason about **coherence** — does the implementation match the spec, are there security holes, is this maintainable.
+- a map of the system's domains
+- a feature backlog with priority, size, and dependencies
+- a phased plan (Phase 0: foundation, Phase 1: core loop, Phase 2+: extensions)
 
-These are not the same cognitive mode. In human teams, they're often different people. Asking one model pass to do all five produces output that is mediocre at all of them, because the prompt can't afford to go deep on any one. The context is split across concerns that actively pull in different directions.
-
----
-
-## The Five Agents in Genesis
-
-### Agent 0 — Planner
-
-The Planner takes a natural-language product description and produces:
-
-- A domain map of the system
-- A sequenced feature backlog with priority, size, and dependencies
-- An implementation phase plan (Phase 0: foundation, Phase 1: core loop, Phase 2+: extensions)
-
-It does not write code. It does not make architectural decisions. It does not estimate in lines-of-code. Its entire job is to answer: *what should we build, in what order, and why*.
+It doesn't write code, make architecture decisions, or estimate in lines of
+code. Its only job is to decide what to build, in what order, and why.
 
 Output: `docs/plan/` and `.pipeline/planner-output.json`
 
-### Agent 1 — Architect
+### Architect
 
-The Architect reads the Planner's output and produces system design artifacts:
+The Architect reads the plan and produces the design:
 
-- A `spec.md` with component responsibilities and data flow
-- Architecture Decision Records (ADRs) for non-obvious choices
+- `spec.md` with component responsibilities and data flow
+- architecture decision records (ADRs) for anything non-obvious
 - API contracts between components
-- A technology map
+- a technology map
 
-The Architect is explicitly prohibited from writing implementation code. It reasons at the interface layer — what does each module expose, what are the invariants, what shape do payloads take. This sounds like over-engineering for a side project. In practice, it's the document that keeps the Developer and Reviewer from talking past each other.
+It isn't allowed to write implementation code. It works at the interface level:
+what each module exposes, what must hold true, and what shape payloads take.
+That can sound like overkill for a side project. In practice, the spec is what
+keeps the Developer and the Reviewer from talking past each other.
 
 Output: `docs/spec.md`, `docs/adr/`, `docs/contracts/`, `.pipeline/architect-output.json`
 
-### Agent 2 — Developer
+### Developer
 
-The Developer reads the Architect's output and writes production code in `src/`. Critically, it is scoped to the current pipeline pass — it doesn't try to implement the entire system. It implements what was planned for this slice.
+The Developer reads the Architect's output and writes code in `src/`. It only
+works on the current slice, not the whole system.
 
-It is explicitly prohibited from redesigning architecture mid-implementation. If it encounters a contradiction in the spec, it writes a flag to the handoff JSON and continues with reasonable assumptions. The Reviewer will catch it.
+It isn't allowed to redesign the architecture while implementing. If it finds a
+contradiction in the spec, it records a flag in its handoff JSON, makes a
+reasonable assumption, and continues. The Reviewer will catch it.
 
 Output: `src/`, `.pipeline/developer-output.json`
 
-### Agent 3 — Tester
+### Tester
 
-The Tester reads the Developer's output and the Architect's contracts, then writes tests in `tests/`. It is not allowed to read the source code and write tests that mirror its structure — that produces tests that pass trivially. It reasons from the contract outward: given this interface, what inputs would break it?
+The Tester reads the Developer's output and the Architect's contracts and
+writes tests in `tests/`. It isn't allowed to write tests by copying the
+structure of the source code, because those tests pass by construction. It
+starts from the contract instead: given this interface, which inputs should
+break it?
 
 Output: `tests/`, `.pipeline/tester-output.json`
 
-### Agent 4 — Reviewer
+### Reviewer
 
-The Reviewer is the only agent that reads everything — plan, spec, implementation, and tests — and produces a verdict. It classifies issues as Critical (block merge), Major (fix before next slice), or Minor (log, address in polish). If there are critical issues, the pipeline loops: the Reviewer's output becomes the Developer's input for the next pass.
+The Reviewer is the only agent that reads everything: plan, spec, code, and
+tests. It sorts issues into Critical (blocks the merge), Major (fix before the
+next slice), and Minor (log it, fix during polish). If there are critical
+issues, the pipeline loops and the Reviewer's output becomes the Developer's
+input for the next pass.
 
 Output: `.pipeline/reviewer-output.json`
 
+## Why plain JSON files instead of a message bus
+
+The most common question about this design is why the agents hand off through
+JSON files in a `.pipeline/` directory instead of an orchestration framework or
+an event bus.
+
+I have three reasons.
+
+**Debugging.** When a run goes wrong, `cat .pipeline/architect-output.json`
+shows exactly what the Architect decided and why. I can diff it against what the
+Developer assumed and find where things went off track without setting up
+tracing or searching logs.
+
+**Resuming.** Files survive restarts. If a run dies halfway through the
+Developer pass, the Planner and Architect outputs are still on disk and the
+pipeline picks up from the last agent that finished. An in-memory queue doesn't
+give you that, and a message bus only does with extra setup.
+
+**History.** Every handoff is a file I can commit, diff, review, and revert. If
+the Reviewer blocks a merge, the reason is in the file. If I want to know why
+the Architect chose a pattern, the ADR is in `docs/adr/`.
+
+The downside is that this doesn't scale to many pipelines running in parallel.
+Genesis runs one pipeline for one user at a time, so that's fine.
+
+## What I got wrong the first time
+
+In the first version I defined the agents with frontmatter fields I'd made up,
+like `trigger`, `pipeline_position`, and `reads_from`. The tool running the
+agents (Claude Code) didn't recognize any of them, couldn't discover the
+agents, and the pipeline never ran cleanly.
+
+The fix was obvious in hindsight: use the format the tool actually expects.
+Subagents take `name`, `description`, `tools`, and `model`. Skills take
+`description` and `allowed-tools`. Don't invent schema in config files and
+hope something reads it.
+
+More generally, the first version tried to be clever about discovering and
+routing agents automatically. The version that works is explicit. Each agent
+knows exactly which files it reads and which it writes.
+
+## The review loop
+
+The pipeline doesn't run straight through. The Reviewer's verdict decides what
+happens next:
+
+- **Approved:** the slice is done.
+- **Critical issues:** the Developer runs again, with the Reviewer's critical
+  issues as extra input.
+- **Blocked:** the pipeline stops and asks me to resolve a contradiction or
+  ambiguity.
+
+The loop is capped. A well-defined slice should pass in one or two rounds. If
+it doesn't, either the Planner made the slice too large or the Architect's
+contracts were too vague. That's frustrating, but it tells me where the problem
+is.
+
+## What this costs
+
+The costs are real, so here they are.
+
+**Time.** Five agents running one after another means at least five long LLM
+calls. A slice takes clearly longer than a single-prompt generation. For a
+complete, tested, reviewed slice of an app, I'm fine with that. For code
+autocomplete it would be ridiculous.
+
+**Context.** Each agent reads its predecessors' output before it starts, so
+the further down the pipeline, the more tokens are spent before any new work
+happens. The Reviewer, which reads everything, is the most expensive.
+
+**Maintenance.** Five agents means five system prompts, five sets of rules to
+keep consistent, and five handoff formats to keep in sync. Change the Planner's
+output schema and you have to update the Architect's input handling too.
+
+The design suits Genesis because generating a whole tested application needs
+it. For a simpler task, one good prompt is probably the right tool.
+
 ---
 
-## Why Plain JSON Files Over a Message Bus
-
-The most common reaction to this design is: *why are agents communicating via JSON files in a `.pipeline/` directory instead of a proper orchestration layer or event bus?*
-
-Three reasons.
-
-**Debuggability.** When a pipeline fails, you can `cat .pipeline/architect-output.json` and read exactly what the Architect decided and why. You can diff it against the Developer's assumptions. You can see where the chain broke without setting up tracing infrastructure or digging through logs. The entire pipeline state is readable as text files in your project directory.
-
-**Statefulness across sessions.** File-based handoffs persist across process restarts. If a Cloud Function times out halfway through a Developer run, the Planner and Architect outputs are not lost. The pipeline can resume from the last completed agent. A message bus or in-memory queue doesn't give you this for free.
-
-**Auditability.** Every agent's decision is a record in a directory that can be committed to version control, diffed, reviewed, and rolled back. If a Reviewer blocks a merge and you want to understand why, the answer is in the file. If a user asks "why did the Architect choose this pattern", the ADR is in `docs/adr/`.
-
-The tradeoff is that this pattern doesn't scale to high-volume parallel pipelines. Genesis is a single-user, single-pipeline system. The tradeoff is correct.
-
----
-
-## What I Got Wrong the First Time
-
-The first version of this system had agents defined with custom frontmatter fields I invented — `trigger`, `pipeline_position`, `reads_from`. They didn't correspond to anything the orchestrator actually understood. The pipeline never ran cleanly because the orchestrator couldn't discover the agents.
-
-The fix was obvious in retrospect: use the formats the orchestrator actually expects. Subagents need `name`, `description`, `tools`, `model`. Skills need `description` and `allowed-tools`. Don't invent schema in configuration files.
-
-More broadly: the first version tried to be clever about agent discovery and auto-routing. The working version is explicit. Each agent knows exactly what it reads and exactly what it writes. There is no magic.
-
----
-
-## The Iteration Loop
-
-The pipeline is not linear in practice. The Reviewer's verdict determines the next state:
-
-- **All clear**: pipeline complete, output is ready
-- **Major issues**: Developer reruns with Reviewer's critical issues as additional input
-- **Blocked**: pipeline halts, user is prompted to resolve a contradiction or ambiguity
-
-This loop is bounded. A well-specified slice should converge in one or two passes. If it's not converging, the Planner's slice was too large or the Architect's contracts were underspecified. That's useful signal even when it's frustrating.
-
----
-
-## What This Approach Costs
-
-Honesty requires listing the costs.
-
-**Latency.** Five sequential agent passes is five LLM calls. For a single feature slice, this takes noticeably longer than a single-pass generation. For the problem Genesis is solving — generating a complete, tested, reviewed application slice — the latency is acceptable. For a code autocomplete use case, it would be absurd.
-
-**Context overhead.** Each agent reads its predecessors' output files before starting. The further down the pipeline, the more context is consumed before the agent does any work. The Reviewer, which reads everything, has the most expensive context load.
-
-**Prompt engineering surface area.** Five agents means five system prompts to maintain, five sets of constraints to keep consistent, and five handoff formats to keep synchronized. When you change the Planner's output schema, you have to update the Architect's reader. This is real maintenance cost.
-
-The design makes sense for Genesis because the problem demands it. For a simpler task, a well-crafted single prompt is probably the right tool.
-
----
-
-The pipeline approach is not novel — multi-agent systems are a well-established pattern. What's worth examining is *when* they're appropriate, and what the concrete implementation decisions look like. In Genesis, specialization by cognitive mode, explicit handoffs, and file-based state persistence are the three decisions that made the system actually work.
-
----
-
-*All architectural decisions described here are from my own project work. Nothing is specific to any employer's internal systems.*
+Multi-agent pipelines aren't new. What's worth looking at is *when* they're
+worth it and how the details work in practice. For Genesis, three decisions
+made the difference: splitting agents by the kind of thinking they do, making
+every handoff explicit, and keeping pipeline state in plain files.

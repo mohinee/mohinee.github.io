@@ -1,12 +1,12 @@
 ---
-layout: post
-title: "Feature Flags Done Right: Why Math.random() Breaks Your Rollouts"
+title: "Why Math.random() breaks your feature flag rollouts"
 date: 2026-07-30
+reading_time: 6
 tags: [architecture, feature-flags, typescript, backend, frontend]
 description: "Percentage rollouts look trivial until users flicker between variants and your A/B metrics stop meaning anything. Deterministic hashing, salting, and evaluation order, with code you can run."
 ---
 
-A feature flag service is one of those systems where the first version is 20 lines and the correct version is about 60. Almost all of the difference is in one function: how you decide whether *this* user is in the 10%.
+The first version of a feature flag service is about 20 lines. A correct one is about 60, and almost all of the difference is in one function: the one that decides whether *this* user is in the 10%.
 
 ## The naive version
 
@@ -14,7 +14,7 @@ A feature flag service is one of those systems where the first version is 20 lin
 const enabled = Math.random() < 0.10;
 ```
 
-It passes every demo. It also fails in three ways that only show up in production:
+It works in every demo, and it fails in three ways that only show up in production:
 
 1. **Flicker.** The same user gets a different answer on every evaluation. They see the new checkout on page load and the old one after a refresh.
 2. **Corrupted experiments.** If a user can be in both arms across sessions, your A/B analysis is comparing populations that overlap, and the result is meaningless.
@@ -46,7 +46,7 @@ export const bucket = (flagKey: string, userId: string) =>
 const inRollout = bucket(flag.key, user.id) < flag.rollout.percent * 100;
 ```
 
-Three details that matter:
+Three details matter here:
 
 **Hash the UTF-8 bytes, not `charCodeAt`.** JavaScript strings are UTF-16. If you hash code units, a Go or Python SDK evaluating the same flag will compute a different bucket for any non-ASCII ID, and your server and client will disagree about who is in the rollout. Hashing bytes makes the algorithm portable.
 
@@ -101,7 +101,7 @@ Options, roughly in order of complexity:
 - **Publish changes over pub/sub** (Redis, a message bus) so instances update within milliseconds, with periodic full reconciliation as a safety net for missed messages.
 - **A single writer** that everything else follows.
 
-Whichever you choose, say the limitation out loud. A design that quietly assumes one process is not a design.
+Whichever you choose, write the limitation down. If a design only works with one process, the design should say so.
 
 ## Getting flags to the browser
 
@@ -125,4 +125,4 @@ Decide in advance what a flag returns when the flag service is unreachable, and 
 - A multi-instance propagation story, stated explicitly
 - Per-flag safe defaults for when the service is down
 
-The code above is small enough to keep in one file, and the checks table takes a few lines of test code to reproduce. I'd suggest running it before trusting any flag system, including your own.
+All of the code above fits in one file, and reproducing the checks table takes a few lines of test code. Run something like it before you trust any flag system, including one you wrote.

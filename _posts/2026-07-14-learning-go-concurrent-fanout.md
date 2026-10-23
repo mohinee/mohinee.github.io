@@ -1,18 +1,18 @@
 ---
-layout: post
-title: "Learning Go by Fanning Out to Many APIs at Once"
+title: "Learning Go by fanning out to many APIs at once"
 date: 2026-07-14
+reading_time: 6
 tags: [go, concurrency, backend, learning, llm]
 description: "A small Go CLI that calls several LLM APIs concurrently teaches goroutines, channels, context cancellation and error handling in one sitting. Here are the design decisions that mattered."
 ---
 
-If you already write TypeScript, C# or Java, Go's syntax takes an afternoon. What takes longer is unlearning habits. Go has no exceptions, no `async/await`, and no inheritance. It has small structural interfaces, errors as ordinary values, and goroutines.
+If you already write TypeScript, C# or Java, you can learn Go's syntax in an afternoon. Unlearning your habits takes longer. Go has no exceptions, no `async/await`, and no inheritance. It has small structural interfaces, errors as ordinary values, and goroutines.
 
-The fastest way I know to force all of that into your head is a small project that touches every one of them. I picked a CLI that sends one prompt to several LLM provider APIs at once, waits for whoever answers, and reports the successes and the failures separately. It is roughly 100 lines, and almost every line is a decision.
+The quickest way I've found to learn all of that is a small project that needs every one of them. I picked a CLI that sends one prompt to several LLM provider APIs at once, waits for whoever answers, and reports the successes and the failures separately. It's about 100 lines, and most of them involve a choice you'd make differently in another language.
 
 ## The shape of the problem
 
-Fan-out with partial failure is a real pattern, not a toy. Anything that queries multiple backends (search shards, price feeds, model providers) has the same three requirements:
+Fan-out with partial failure shows up constantly in real systems. Anything that queries multiple backends (search shards, price feeds, model providers) has the same three requirements:
 
 1. Run all calls concurrently, so total latency is roughly the slowest call, not the sum.
 2. Bound the whole operation with one deadline.
@@ -134,7 +134,7 @@ ok, err := Summarize(results)
 // and the whole call returned in ~100ms, not 2s
 ```
 
-Run it with `go test -race`. The race detector costs almost nothing to enable and is the closest thing Go has to a safety net for this kind of code.
+Run it with `go test -race`. It's one flag. The race detector does slow things down (the Go docs put it at 2–20x CPU and 5–10x memory), which is why it belongs in tests and CI rather than production builds, but it's the best protection Go offers for this kind of code.
 
 ## What transferred, and what didn't
 
@@ -147,7 +147,7 @@ Mapping from what I already knew:
 | `try/catch` | `if err != nil`, plus wrapping with `%w` |
 | Structural typing (TS) | Interfaces, satisfied implicitly |
 
-The thing that did not transfer is the mindset about lifetimes. In a language with a runtime that manages async work for you, "what happens to the losers when I stop waiting?" is rarely your problem. In Go it always is. Every goroutine you start needs a story for how it ends.
+What didn't transfer was how I thought about lifetimes. In a language with a runtime that manages async work for you, "what happens to the losers when I stop waiting?" is rarely your problem. In Go it always is. Every goroutine you start needs a story for how it ends.
 
 ## If you want to build it
 
@@ -161,4 +161,4 @@ A sequence that worked for me:
 6. Real HTTP providers behind the same interface.
 7. Table-driven tests under `-race`, then break the buffer deliberately and watch the leak.
 
-Step 7 is the one that makes the rest stick.
+Don't skip step 7. Watching the leak happen is what made the rest make sense to me.

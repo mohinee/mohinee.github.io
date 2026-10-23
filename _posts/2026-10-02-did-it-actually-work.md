@@ -1,7 +1,7 @@
 ---
-layout: post
-title: "Did It Actually Work? Measuring an AI Deployment Without Fooling Yourself"
+title: "Did it actually work? Measuring an AI deployment without fooling yourself"
 date: 2026-10-02
+reading_time: 5
 tags: [ai, measurement, deployment, analytics, python]
 description: "A before-and-after chart is the easiest way to overstate what an AI deployment did. Baselines, control groups and defined terms, with a small simulation showing a naive estimate inflating a real effect by more than half."
 ---
@@ -33,7 +33,7 @@ chart. Before the first user sees the feature, I write down:
 
 ## The counterfactual problem
 
-A before-and-after chart quietly assumes nothing else changed. In practice,
+A before-and-after chart assumes nothing else changed. In practice,
 something always does. Seasons, team changes, a product launch, a policy
 change, a holiday quarter. Any of these can move the metric in the same
 direction as your feature, and the chart will credit you for all of it.
@@ -47,7 +47,7 @@ your drop isn't yours.
 ## A small simulation
 
 To show how much this matters, here is a simulation where I know the true
-answer. The agent genuinely removes **20%** of tickets in the categories it
+answer. The agent really removes **20%** of tickets in the categories it
 covers. But the launch also happens to land at the start of a quieter quarter,
 which reduces tickets in *every* category by about 15%.
 

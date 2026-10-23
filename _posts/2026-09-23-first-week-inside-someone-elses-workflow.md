@@ -1,7 +1,7 @@
 ---
-layout: post
-title: "The First Week Inside Someone Else's Workflow"
+title: "The first week inside someone else's workflow"
 date: 2026-09-23
+reading_time: 5
 tags: [engineering, discovery, product, ai, stakeholders]
 description: "The request you're handed is rarely the problem you need to solve. How I spend the first week with a team I'm building for: watching the work, mapping the waits, and finding the bottleneck before writing code."
 ---

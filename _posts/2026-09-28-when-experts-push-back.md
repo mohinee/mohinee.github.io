@@ -1,14 +1,14 @@
 ---
-layout: post
-title: "When the Experts Push Back: Turning Objections Into Requirements"
+title: "When the experts push back: turning objections into requirements"
 date: 2026-09-28
+reading_time: 4
 tags: [ai, adoption, stakeholders, code-review, engineering]
 description: "When experienced people resist an AI tool, the objection is usually a requirement they haven't written down. A case study from introducing an LLM reviewer into CI, and how a design change turned resistance into adoption."
 ---
 
-The hardest audience for an AI tool isn't the people who don't understand it.
-It's experienced people who understand their own work very well and can see
-exactly what the tool would get wrong.
+The hardest people to convince about an AI tool are experienced people who
+know their own work very well and can see exactly what the tool would get
+wrong.
 
 I learned this introducing an LLM-based code reviewer into a team's CI
 pipeline. The goal was modest: catch untested edge cases before merge and take

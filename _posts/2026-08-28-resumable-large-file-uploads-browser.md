@@ -1,14 +1,14 @@
 ---
-layout: post
-title: "Designing Resumable Large-File Uploads in the Browser"
+title: "Designing resumable large-file uploads in the browser"
 date: 2026-08-28
+reading_time: 8
 tags: [frontend, architecture, javascript, system-design, reliability]
 description: "Uploading a 5 GB file is not a bigger version of uploading a 5 MB file. Chunking, per-chunk checksums, bounded concurrency, resume, and abort, and the bug I introduced in my own first draft."
 ---
 
 A single `fetch` with a `FormData` body is fine for a profile picture. It is the wrong tool for a 5 GB video. One dropped connection at 98% means starting over, the browser may try to hold the whole thing in memory, and the user has no way to pause or cancel meaningfully.
 
-The design that fixes this is well known: split the file into chunks and upload them independently. The interesting part is everything that has to be true for that to actually work.
+The fix is well known: split the file into chunks and upload them separately. The hard part is everything else that has to be right for that to work.
 
 ## The four constraints
 
@@ -133,7 +133,7 @@ The general lesson is that "the loop stopped" and "the work completed" are diffe
 
 ## UI state is not transport state
 
-One last design point that pays off later. Keep two models:
+One last design point, which saves trouble later. Keep two models:
 
 - **Transport state:** chunk indices, retry counts, checksums, upload IDs, signed URLs. This is internal and changes constantly.
 - **UI state:** `queued`, `hashing`, `uploading`, `paused`, `completing`, `done`, `failed`, plus a single progress number.

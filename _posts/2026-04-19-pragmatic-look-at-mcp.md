@@ -1,137 +1,144 @@
 ---
 title: "A pragmatic look at the Model Context Protocol"
 date: 2026-04-19
-excerpt: "MCP shows up in a lot of conversations as a kind of universal solvent for LLM-tool integration. After spending real time with it, I think it's better understood as a useful protocol with a narrow sweet spot — not a standard everyone needs to adopt."
-reading_time: 8
+reading_time: 6
+description: "MCP gets talked about as the answer to every LLM-tool integration. After spending some time with it, I think it's a useful protocol with a narrow sweet spot, not something every project needs."
+tags: [ai, llm, mcp, architecture]
 ---
 
-The Model Context Protocol — MCP — has been getting attention as the standard
-for connecting LLMs to tools and data. Anthropic published it, the ecosystem
-has grown quickly, and the analogy to LSP (the Language Server Protocol that
-made every editor speak the same language to every linter) has been doing a lot
-of rhetorical work.
+The Model Context Protocol (MCP) gets described as *the* standard for connecting
+LLMs to tools and data. Anthropic published it in November 2024, OpenAI, Google
+and Microsoft added support during 2025, and the comparison to LSP (the Language
+Server Protocol that let every editor talk to every language tool) gets made in
+almost every conversation about it.
 
-I spent a few evenings poking at it because I wanted to form an opinion that
-wasn't downstream of a launch announcement. This is what I came away with.
-None of it is hot takes; some of it might be wrong as the protocol evolves.
+I spent a few evenings experimenting with it because I wanted an
+opinion that didn't come from a launch post. This is where I ended up. Parts of
+it may be wrong by the time you read this; the spec has had several dated
+revisions already.
 
 ## What MCP actually is
 
-Strip away the framing and MCP is a JSON-RPC protocol that defines how a host
-(say, an IDE or a chat app) talks to a server (which exposes tools, resources,
-or prompts) on behalf of an LLM. The client doesn't call the LLM. The LLM
-sits inside the host, and the host translates between the model's requests and
-the server's responses.
+Take away the framing and MCP is JSON-RPC 2.0 between a *host* (an IDE, a chat
+app, an agent runtime) and a *server* that exposes capabilities. The model
+never talks to the server directly. It lives inside the host, and the host turns
+the model's tool calls into requests to the server and passes the results back.
 
-That's it. There's a transport layer, a capability negotiation, a few
-primitives — `tools`, `resources`, `prompts` — and conventions for how each
-behaves. It's not magic. It's plumbing.
+There are two standard transports: stdio for servers running locally as a
+subprocess, and Streamable HTTP for remote ones (it replaced the earlier
+HTTP+SSE transport in the March 2025 revision). There's an `initialize`
+handshake where both sides declare capabilities, and three main server
+primitives:
 
-The plumbing is well-designed. The schema is reasonable. The decision to model
-*both* tool-calls (model takes an action) and resources (model reads context)
-captures something real about how LLMs actually use external systems.
+- **Tools**: functions the model can call (`tools/list`, `tools/call`)
+- **Resources**: data the host can read into context (`resources/list`, `resources/read`)
+- **Prompts**: reusable templates the user can pick (`prompts/list`, `prompts/get`)
 
-## Where MCP earns its keep
+That's most of it. It's plumbing, and it's decent plumbing. Separating tools
+(the model *does* something) from resources (the model *reads* something)
+matches how models actually use external systems.
 
-Two contexts where I think MCP is genuinely valuable:
+## Where MCP is worth it
 
-**Tool ecosystems with many hosts.** If you're building tools you want to be
-usable across IDEs, chat apps, and agent frameworks, MCP saves you from writing
-six different integrations. This is the LSP analogy and it holds. The work
-that's gone into editor support is real.
+I see two cases where it clearly pays for itself.
 
-**Internal tooling at companies with many AI surfaces.** If your company has
-three different LLM-powered products and they all need to reach the same set of
-internal tools, defining those tools once via MCP is genuinely better than
-redoing the integration per product. The auth story still has rough edges, but
-the protocol gives you a sane structure.
+**Tools that should work in many hosts.** If you want the same tool to work in
+Claude Desktop, VS Code, Cursor, and some agent framework, MCP means one server
+instead of four integrations. This is where the LSP comparison holds up.
 
-In both of these, MCP is paying off the cost of an extra abstraction with real
-reuse. That's the test I'd apply.
+**Internal tooling at a company with several AI products.** If three LLM-powered
+products all need to reach the same internal systems, defining those tools once
+as MCP servers beats rebuilding the integration in each product.
 
-## Where I think people overuse it
+In both cases the extra layer is paid for by reuse. That's the test I'd apply
+before adding it.
 
-**Single-product, single-LLM apps.** If you have one app calling one model and
-five tools that only that app uses, MCP is overhead. Native tool-calling APIs
-from the model providers are simpler, faster, and don't require running an MCP
-server. You'd be paying for interop you'll never use.
+## Where I think it's overused
 
-**Anywhere latency matters more than flexibility.** MCP adds a hop. For a chat
-agent, that's invisible. For something embedded in a tight UX loop, the
-hop becomes part of your perceived latency budget. Worth measuring before
-committing.
+**One app, one model, a handful of tools.** If your app calls one provider and
+has five tools nobody else will use, MCP is overhead. The provider's native
+tool calling (a JSON schema per tool in the request) is simpler, has one fewer
+process to deploy, and has one fewer thing to debug. You'd be paying for
+interoperability you won't use.
 
-**As a substitute for thinking about the integration.** This is the one I see
-most. "Just expose it as an MCP server" gets used as a way to avoid the harder
-question of *what should the model actually be allowed to do, with what
-arguments, with what error semantics, with what auth scope?* MCP doesn't answer
-those — it gives you a place to put the answer. The questions are still yours.
+**Latency-sensitive paths.** A remote MCP server is an extra network hop per
+tool call. In a chat agent you won't notice it. In an agent loop that makes
+eight sequential tool calls behind an interactive UI, it adds up. Measure it
+before you commit.
 
-## The auth story, briefly
+**As a way to avoid designing the integration.** This is the one I see most.
+"Just expose it as an MCP server" gets used to skip the harder questions: what
+should the model be allowed to do, with which arguments, with what error
+behavior, and under whose permissions? MCP gives you a place to write the
+answers down. It doesn't answer them for you.
 
-MCP's auth story is the area I'd watch most closely if you're building on it.
-The protocol allows for it but doesn't prescribe it tightly, which means
-implementers have made different choices. For local MCP servers running on
-the user's machine — fine, the security boundary is the OS. For remote MCP
-servers, you're inheriting whatever auth model the server author chose, and
-that varies. If you're building an enterprise integration, you'll spend real
-time on this.
+## Auth
+
+This is the part I'd watch most closely. The spec now defines authorization
+for HTTP transports on top of OAuth 2.1, and the June 2025 revision made remote
+servers OAuth resource servers with discoverable metadata (RFC 9728). That
+helps a lot. In practice:
+
+- **Local stdio servers** don't use any of it. They usually read an API key from
+  an environment variable, and the security boundary is your machine and
+  whatever that key can do.
+- **Remote servers** vary in how fully they implement the spec, and
+  enterprise identity providers don't always support the flows it assumes, such
+  as dynamic client registration.
+
+If you're building an enterprise integration, plan real time for auth. It will
+take longer than the tools themselves.
 
 ## What surprised me
 
-The thing I didn't expect, going in, was how much of MCP's value is in the
-*discoverability* primitives, not the tool-calling primitives. The
-`list_tools` / `list_resources` flow — where a host can ask a server "what
-can you do?" and present that to the user — is the part that feels genuinely
-new. Most tool-calling APIs assume the host already knows what's available.
-MCP says: tools can be discovered and connected on the fly, and the user can
-choose.
+I expected tool calling to be the interesting part. It turned out to be
+discovery. A host can ask a server what it offers (`tools/list`), show that to
+the user, and let them turn individual tools on and off. The server can also
+send a `notifications/tools/list_changed` notification when its tool set
+changes. Most provider tool-calling APIs assume the application already knows
+its full tool list at build time. MCP lets tools be connected at runtime, and
+lets the user choose them.
 
-This unlocks a UX pattern I hadn't fully appreciated: the user composing their
-own agent capability surface. That's downstream of MCP, not strictly part of
-it, but it's where the protocol gets interesting.
+That makes something possible I hadn't thought much about before: users
+assembling their own agent's capabilities, server by server. Strictly speaking
+that's a host feature, not part of the protocol, but MCP is what makes it
+practical.
 
-## What I'd do if I were building agentic features today
+## What I'd do if I were building agent features today
 
-Honest answer:
+- **A single product:** start with the provider's native tool calling. Add MCP
+  if and when a second host or product needs the same tools.
+- **Infrastructure other teams consume:** reach for MCP early. The interop
+  pays off once you have more than one consumer.
+- **Anything that connects to user-supplied tools or third-party services:**
+  start with MCP. Runtime discovery is the main reason to use it.
 
-- If I were building a *single product*, I'd start with the model provider's
-  native tool-calling and add MCP only if I outgrew it.
-- If I were building *infrastructure* — something other teams or products
-  consume — I'd reach for MCP earlier, because the interop pays off across
-  consumers.
-- If I were building *anything that connects to user-supplied tools or
-  third-party services*, MCP is the right starting point. The discoverability
-  primitives are the unlock.
+I'd push back on "MCP is the standard, so use MCP." A standard you have no use
+case for is just more code to maintain. The useful question is whether you
+have the many-hosts or many-tools problem this protocol solves. If you don't,
+you're paying for a layer you don't need.
 
-The framing I'd push back on is "MCP is the standard, so use MCP." Standards
-without a use case are just code. The right question is: do you have the
-multi-host or multi-tool problem this protocol solves? If yes, great. If not,
-you might be paying for a layer you don't need.
+## Will it last?
 
-## Will it become The Standard?
+LSP worked because it solved an obvious N×M problem (N editors, M language
+tools), it had workable governance, and the alternative of every editor
+integrating every language natively was clearly worse.
 
-I don't know. LSP succeeded because it solved a clear N×M problem (N editors,
-M language tools), it had reasonable governance, and the alternative — every
-editor implementing every linter natively — was visibly worse than the
-abstraction.
+MCP has the same N×M shape (N hosts, M tool providers), and on adoption it has
+already won: every major model provider and most AI-enabled IDEs support it,
+and Anthropic moved it to a Linux Foundation project at the end of 2025, which
+answers some of the governance question. What I'm less sure about is the
+*shape*. The spec is still changing in meaningful ways, especially around auth
+and long-running operations, and servers written against the November 2024
+version already needed updates.
 
-MCP has the same shape of problem (N hosts, M tool ecosystems) but the field
-is moving faster, the competing approaches are evolving alongside it, and the
-LLM space tends to consolidate around whatever the leading model providers
-support. I think MCP has real momentum. I'd be surprised if some version of
-it didn't end up as the de facto interface for a chunk of agentic tooling.
-But "this exact protocol, in this exact form, by this time next year" is a
-forecast I wouldn't bet on.
-
-What I'd bet on: the *idea* of a structured, host-agnostic way for LLMs to
-discover and call tools is here to stay, regardless of which protocol wins.
-And that's actually the more important thing.
+What I'd bet on is that a structured, host-independent way for models to
+discover and call tools is here to stay. Whether it ends up looking much like
+today's MCP is a separate question.
 
 ---
 
-*Caveat I should add at the bottom: I've poked at MCP, not shipped a
-production system on it. Some of the rough edges I'm describing might be more
-serious in practice than I've experienced, or might already be fixed by the
-time you read this. If you've actually shipped MCP-based tooling, I'd value
-the corrections.*
+*To be clear about my experience: I've experimented with MCP, not shipped a
+production system on it. Some of the rough edges above may be worse in
+practice than I saw, or already fixed. If you've run MCP in production, I'd
+welcome corrections.*
